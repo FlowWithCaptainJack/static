@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d14">
+<title>光影影院</title>
+<style>
+:root{
+  --bg:#0b0d14;
+  --card:#151925;
+  --card2:#1c2233;
+  --text:#eef1f7;
+  --sub:#8a92a6;
+  --accent:#4f8cff;
+  --accent2:#7b5cff;
+  --gold:#f5b849;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+}
+img{display:block;width:100%;height:100%;object-fit:cover}
+
+/* ===== 顶栏 ===== */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(12px + env(safe-area-inset-top)) 16px 12px;
+  background:linear-gradient(180deg,rgba(11,13,20,.98),rgba(11,13,20,.86));
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{
+  width:34px;height:34px;border-radius:10px;flex:none;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(79,140,255,.35);
+}
+.logo svg{width:20px;height:20px;fill:#fff}
+.brand .t{font-size:19px;font-weight:700;letter-spacing:.5px}
+.brand .t b{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand .s{font-size:11px;color:var(--sub);margin-top:1px}
+
+/* ===== 首页 ===== */
+.page{padding:14px 16px calc(40px + env(safe-area-inset-bottom))}
+.hero{
+  position:relative;border-radius:20px;overflow:hidden;aspect-ratio:16/9;
+  margin-bottom:22px;box-shadow:0 12px 32px rgba(0,0,0,.5);
+}
+.hero img{position:absolute;inset:0}
+.hero .mask{position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(11,13,20,.96))}
+.hero .info{position:absolute;left:18px;right:18px;bottom:16px}
+.hero .info .tag{
+  display:inline-block;font-size:11px;color:#0b0d14;font-weight:600;
+  background:var(--gold);padding:3px 9px;border-radius:20px;margin-bottom:8px;
+}
+.hero .info h2{font-size:21px;font-weight:700;margin-bottom:6px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+.hero .info .meta{font-size:12px;color:#c7cdda;display:flex;align-items:center;gap:10px}
+.hero .info .meta .star{color:var(--gold)}
+.hero .play-btn{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(255,255,255,.22);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  transition:.25s;
+}
+.hero .play-btn svg{width:26px;height:26px;fill:#fff;margin-left:3px}
+.hero .play-btn:active{transform:translate(-50%,-50%) scale(.9)}
+
+.section-title{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.section-title .bar{width:4px;height:18px;border-radius:2px;background:linear-gradient(var(--accent),var(--accent2))}
+.section-title h3{font-size:17px;font-weight:700}
+
+/* 剧集网格 */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cell{cursor:pointer;transition:transform .15s}
+.cell:active{transform:scale(.96)}
+.cell .cover{
+  position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;
+  background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.35);
+}
+.cell .cover .ep{
+  position:absolute;left:8px;top:8px;font-size:10px;color:#fff;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+  padding:2px 7px;border-radius:10px;font-weight:500;
+}
+.cell .cover .playing{
+  position:absolute;inset:0;background:rgba(0,0,0,.45);
+  display:flex;align-items:center;justify-content:center;
+}
+.cell .cover .playing svg{width:26px;height:26px;fill:var(--gold)}
+.cell .name{margin-top:7px;font-size:12.5px;line-height:1.35;color:#dfe3ec;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ===== 播放页 ===== */
+#player{position:fixed;inset:0;background:#000;z-index:100;display:none;flex-direction:column}
+#player.show{display:flex}
+.video-wrap{position:relative;flex:1;background:#000;overflow:hidden}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.video-wrap.fs video{object-fit:contain}
+
+/* 顶部控制 */
+.v-top{
+  position:absolute;top:0;left:0;right:0;z-index:20;
+  display:flex;align-items:center;gap:6px;
+  padding:calc(12px + env(safe-area-inset-top)) 14px 30px;
+  background:linear-gradient(180deg,rgba(0,0,0,.75),transparent);
+  transition:opacity .25s;
+}
+.btn{
+  width:38px;height:38px;border:none;border-radius:50%;
+  background:rgba(255,255,255,.14);backdrop-filter:blur(6px);
+  color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  flex:none;
+}
+.btn svg{width:20px;height:20px;fill:#fff}
+.v-title{flex:1;margin:0 8px;min-width:0}
+.v-title .n{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v-title .e{font-size:11px;color:#b9c0cf;margin-top:1px}
+
+/* 中央大按钮 */
+.center-btn{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:72px;height:72px;border-radius:50%;border:none;cursor:pointer;z-index:15;
+  background:rgba(255,255,255,.18);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .2s,transform .2s;
+}
+.center-btn.hide{opacity:0;pointer-events:none}
+.center-btn svg{width:34px;height:34px;fill:#fff}
+.center-btn svg.pause{margin:0}
+.center-btn svg.play{margin-left:4px}
+
+/* 手势提示 */
+.gesture{
+  position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:14;
+  display:flex;align-items:center;gap:14px;
+  padding:8px 16px;border-radius:20px;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+  font-size:12px;color:#fff;transition:opacity .4s;pointer-events:none;
+}
+.gesture.hide{opacity:0}
+
+/* 底部控制条 */
+.v-bottom{
+  position:absolute;left:0;right:0;bottom:0;z-index:20;
+  padding:26px 14px calc(14px + env(safe-area-inset-bottom));
+  background:linear-gradient(0deg,rgba(0,0,0,.82),transparent);
+  transition:opacity .25s;
+}
+.controls.hidden,.v-top.hide,.v-bottom.hide{opacity:0;pointer-events:none}
+.progress{position:relative;height:30px;display:flex;align-items:center;cursor:pointer}
+.progress .track{position:relative;width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.22)}
+.progress .buffered{position:absolute;left:0;top:0;height:100%;background:rgba(255,255,255,.3);border-radius:2px}
+.progress .played{position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px}
+.progress .thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.ctrl-row{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+.ctrl-row .time{font-size:12px;color:#dfe3ec;font-variant-numeric:tabular-nums}
+.ctrl-left,.ctrl-right{display:flex;align-items:center;gap:4px}
+
+/* 倍速菜单 */
+.speed-menu{
+  position:absolute;right:14px;bottom:96px;z-index:30;
+  background:rgba(22,26,38,.96);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;
+  display:none;flex-direction:column;min-width:110px;
+}
+.speed-menu.show{display:flex}
+.speed-menu .opt{
+  padding:12px 20px;font-size:14px;color:#e6e9f0;cursor:pointer;
+  text-align:center;border-bottom:1px solid rgba(255,255,255,.05);
+}
+.speed-menu .opt:last-child{border-bottom:none}
+.speed-menu .opt:active{background:rgba(79,140,255,.2)}
+.speed-menu .opt.active{color:var(--accent);font-weight:600}
+
+/* 选集面板 */
+.ep-panel{
+  position:absolute;right:0;top:0;bottom:0;z-index:40;width:76%;max-width:340px;
+  background:#151925;display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .28s;
+  box-shadow:-8px 0 30px rgba(0,0,0,.5);
+}
+.ep-panel.show{transform:translateX(0)}
+.ep-head{padding:calc(14px + env(safe-area-inset-top)) 18px 14px;border-bottom:1px solid rgba(255,255,255,.06)}
+.ep-head h4{font-size:16px;font-weight:700}
+.ep-head .cnt{font-size:12px;color:var(--sub);margin-top:3px}
+.ep-list{flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.ep-item{
+  aspect-ratio:1;border-radius:10px;background:var(--card2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:#c7cdda;cursor:pointer;transition:.15s;
+}
+.ep-item:active{transform:scale(.92)}
+.ep-item.cur{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:700}
+
+/* 遮罩 */
+.mask-layer{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:35;display:none}
+.mask-layer.show{display:block}
+
+/* 加载 / 错误 */
+.toast{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:200;
+  background:rgba(20,24,36,.95);color:#fff;padding:16px 22px;border-radius:12px;
+  font-size:14px;display:none;flex-direction:column;align-items:center;gap:12px;
+  max-width:80vw;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5);
+}
+.toast.show{display:flex}
+.spinner{width:26px;height:26px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast .retry{padding:8px 20px;border:none;border-radius:20px;background:var(--accent);color:#fff;font-size:13px;cursor:pointer}
+
+@media (min-width:560px){
+  .grid{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </div>
+    <div>
+      <div class="t">光影<b>影院</b></div>
+      <div class="s">高清 · 免登录 · 极速播放</div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="hero" id="hero">
+    <img id="heroImg" alt="">
+    <div class="mask"></div>
+    <button class="play-btn" id="heroPlay">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="info">
+      <span class="tag" id="heroTag">连续剧</span>
+      <h2 id="heroTitle"></h2>
+      <div class="meta">
+        <span class="star">★ <span id="heroRating"></span></span>
+        <span id="heroYear"></span>
+        <span id="heroEps"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="bar"></span><h3 id="listTitle">全部剧集</h3></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- 播放页 -->
+<div id="player">
+  <div class="video-wrap" id="videoWrap">
+    <video id="video" playsinline webkit-playsinline x5-playsinline preload="auto"></video>
+
+    <div class="v-top" id="vTop">
+      <button class="btn" id="btnBack"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"/></svg></button>
+      <div class="v-title">
+        <div class="n" id="vTitle"></div>
+        <div class="e" id="vEp"></div>
+      </div>
+      <button class="btn" id="btnEps"><svg viewBox="0 0 24 24"><path d="M4 6h2v12H4zm14 0h2v12h-2zM8 6h8v12H8z"/></svg></button>
+    </div>
+
+    <div class="gesture hide" id="gesture">← 快退 10s &nbsp;·&nbsp; 快进 10s →</div>
+
+    <button class="center-btn hide" id="centerBtn">
+      <svg class="play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+
+    <div class="mask-layer" id="mask"></div>
+
+    <div class="ep-panel" id="epPanel">
+      <div class="ep-head">
+        <h4>选集</h4>
+        <div class="cnt" id="epCnt"></div>
+      </div>
+      <div class="ep-list" id="epList"></div>
+    </div>
+
+    <div class="v-bottom controls" id="vBottom">
+      <div class="progress" id="progress">
+        <div class="track">
+          <div class="buffered" id="buffered"></div>
+          <div class="played" id="played"></div>
+        </div>
+        <div class="thumb" id="thumb"></div>
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-left">
+          <button class="btn" id="btnRewind"><svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6 8.5 6V6l-8.5 6z"/></svg></button>
+          <button class="btn" id="btnPlay"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+          <button class="btn" id="btnForward"><svg viewBox="0 0 24 24"><path d="M13 6v12l8.5-6-8.5-6zM4 6v12l8.5-6L4 6z"/></svg></button>
+        </div>
+        <div class="time" id="timeText">00:00 / 00:00</div>
+        <div class="ctrl-right">
+          <button class="btn" id="btnSpeed">1.0x</button>
+          <button class="btn" id="btnFs"><svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7zm-2-4h2V7h3V5H5zm12 7h-3v2h5v-5h-2zM14 5v2h3v3h2V5z"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="speed-menu" id="speedMenu"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <div class="spinner" id="toastSpin"></div>
+  <div id="toastMsg">加载中...</div>
+  <button class="retry" id="toastRetry" style="display:none">重试</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+<script>
+// ===== 数据 =====
+const DATA = {"version": 1, "categories": ["连续剧"], "movies": [{"id": "149778-01", "name": "伟大的长征 第01集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261010/42924_c4c99ae0/index.m3u8"}, {"id": "149778-02", "name": "伟大的长征 第02集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261010/42925_05bb87bc/index.m3u8"}, {"id": "149778-03", "name": "伟大的长征 第03集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261010/42926_57e7710f/index.m3u8"}, {"id": "149778-04", "name": "伟大的长征 第04集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261010/42927_09431f00/index.m3u8"}, {"id": "149778-05", "name": "伟大的长征 第05集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261010/42948_e71bef2e/index.m3u8"}, {"id": "149778-06", "name": "伟大的长征 第06集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261010/42949_4838f567/index.m3u8"}, {"id": "149778-07", "name": "伟大的长征 第07集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261011/43039_70143f3a/index.m3u8"}, {"id": "149778-08", "name": "伟大的长征 第08集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261011/43040_4388a23d/index.m3u8"}, {"id": "149778-09", "name": "伟大的长征 第09集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261012/43132_36e8f603/index.m3u8"}, {"id": "149778-10", "name": "伟大的长征 第10集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261012/43133_9a10ba00/index.m3u8"}, {"id": "149778-11", "name": "伟大的长征 第11集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261013/43190_cbbda077/index.m3u8"}, {"id": "149778-12", "name": "伟大的长征 第12集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261013/43191_6a0e49df/index.m3u8"}, {"id": "149778-13", "name": "伟大的长征 第13集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261014/43270_e6fc5835/index.m3u8"}, {"id": "149778-14", "name": "伟大的长征 第14集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261014/43271_a7c3525b/index.m3u8"}, {"id": "149778-15", "name": "伟大的长征 第15集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261015/43353_d4c02b76/index.m3u8"}, {"id": "149778-16", "name": "伟大的长征 第16集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261016/43462_ea81361d/index.m3u8"}, {"id": "149778-17", "name": "伟大的长征 第17集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261017/43521_e5771214/index.m3u8"}, {"id": "149778-18", "name": "伟大的长征 第18集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261017/43522_c9b03be6/index.m3u8"}, {"id": "149778-19", "name": "伟大的长征 第19集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261018/43550_422cf6c6/index.m3u8"}, {"id": "149778-20", "name": "伟大的长征 第20集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261019/43612_e73558fe/index.m3u8"}, {"id": "149778-21", "name": "伟大的长征 第21集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261020/43682_81ed4d71/index.m3u8"}, {"id": "149778-22", "name": "伟大的长征 第22集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261021/43770_75d08d5f/index.m3u8"}, {"id": "149778-23", "name": "伟大的长征 第23集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261022/43852_164c73d9/index.m3u8"}, {"id": "149778-24", "name": "伟大的长征 第24集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261023/43946_ffb7ac22/index.m3u8"}, {"id": "149778-25", "name": "伟大的长征 第25集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261024/44021_95f8fbf9/index.m3u8"}, {"id": "149778-26", "name": "伟大的长征 第26集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261025/44065_04c7ec35/index.m3u8"}, {"id": "149778-27", "name": "伟大的长征 第27集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261025/44066_5dca5f20/index.m3u8"}, {"id": "149778-28", "name": "伟大的长征 第28集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261026/44131_d6b58991/index.m3u8"}, {"id": "149778-29", "name": "伟大的长征 第29集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261026/44132_c61085b9/index.m3u8"}, {"id": "149778-30", "name": "伟大的长征 第30集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261027/44199_73752e30/index.m3u8"}, {"id": "149778-31", "name": "伟大的长征 第31集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261027/44200_2405ba88/index.m3u8"}, {"id": "149778-32", "name": "伟大的长征 第32集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261028/44267_014c073e/index.m3u8"}, {"id": "149778-33", "name": "伟大的长征 第33集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261028/44268_42304c38/index.m3u8"}, {"id": "149778-34", "name": "伟大的长征 第34集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261029/44358_a8a5204d/index.m3u8"}, {"id": "149778-35", "name": "伟大的长征 第35集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261029/44359_ff36cea2/index.m3u8"}, {"id": "149778-36", "name": "伟大的长征 第36集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261030/44492_3ce39e5e/index.m3u8"}, {"id": "149778-37", "name": "伟大的长征 第37集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261030/44493_9e3a3a82/index.m3u8"}, {"id": "149778-38", "name": "伟大的长征 第38集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261031/44551_9a16bdc9/index.m3u8"}, {"id": "149778-39", "name": "伟大的长征 第39集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261031/44552_c05b8e2d/index.m3u8"}, {"id": "149778-40", "name": "伟大的长征 第40集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261101/44596_9d73c511/index.m3u8"}, {"id": "149778-41", "name": "伟大的长征 第41集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261101/44597_1003d98a/index.m3u8"}, {"id": "149778-42", "name": "伟大的长征 第42集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261102/44688_d0ed3ce0/index.m3u8"}, {"id": "149778-43", "name": "伟大的长征 第43集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261102/44689_c981fdf7/index.m3u8"}, {"id": "149778-44", "name": "伟大的长征 第44集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261103/44765_8489127c/index.m3u8"}, {"id": "149778-45", "name": "伟大的长征 第45集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261103/44766_9cd4fbcd/index.m3u8"}, {"id": "149778-46", "name": "伟大的长征 第46集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261104/44853_d6e0ddfc/index.m3u8"}, {"id": "149778-47", "name": "伟大的长征 第47集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261104/44854_76e9ce4d/index.m3u8"}, {"id": "149778-48", "name": "伟大的长征 第48集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261105/44940_9838dd08/index.m3u8"}, {"id": "149778-49", "name": "伟大的长征 第49集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261105/44941_d52545a1/index.m3u8"}, {"id": "149778-50", "name": "伟大的长征 第50集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261106/45034_764154cb/index.m3u8"}, {"id": "149778-51", "name": "伟大的长征 第51集", "cover": "https://hongniuzyimage.com/cover/932878e1dc30bacd71f1a4245b8ba84b.jpg", "category": "连续剧", "description": "以中央红军长征为主线，全面反映了从红军第五次反围剿失败，到红一、红二、红四方面军和红二十五军在中共中央领导下先后实施战略转移，经历了艰苦卓绝的长征，最终取得胜利的历史过程。主演：于和伟、王劲松；导演：张永新。", "year": "2026", "rating": 5.0, "playUrl": "https://super.ffzy-online6.com/20261106/45035_0c2da1c3/index.m3u8"}]};
+
+// 将 51 集按"剧名"分组（去掉 第xx集 后缀）
+function groupSeries(list){
+  const map = new Map();
+  list.forEach(m=>{
+    const title = m.name.replace(/\s*第\d+集\s*$/,'').trim();
+    const epMatch = m.name.match(/第(\d+)集/);
+    const ep = epMatch ? parseInt(epMatch[1]) : 1;
+    if(!map.has(title)){
+      map.set(title,{title,cover:m.cover,description:m.description,year:m.year,rating:m.rating,category:m.category,eps:[]});
+    }
+    map.get(title).eps.push({...m, ep});
+  });
+  const series = [...map.values()];
+  series.forEach(s=>s.eps.sort((a,b)=>a.ep-b.ep));
+  return series;
+}
+const SERIES = groupSeries(DATA.movies);
+const ALL_EP = SERIES.flatMap(s=>s.eps);
+
+// ===== 状态 =====
+let currentEp = null;   // 当前播放的集对象
+let currentSeries = null;
+
+const $ = id => document.getElementById(id);
+const video = $('video');
+const vWrap = $('videoWrap');
+
+// ===== 工具 =====
+function fmt(sec){
+  if(!isFinite(sec)||sec<0) sec=0;
+  sec=Math.floor(sec);
+  const h=Math.floor(sec/3600), m=Math.floor(sec%3600/60), s=sec%60;
+  const mm=String(m).padStart(2,'0'), ss=String(s).padStart(2,'0');
+  return h>0?`${h}:${mm}:${ss}`:`${mm}:${ss}`;
+}
+function showToast(msg, showRetry){
+  $('toastMsg').textContent = msg;
+  $('toastSpin').style.display = showRetry?'none':'block';
+  $('toastRetry').style.display = showRetry?'block':'none';
+  $('toast').classList.add('show');
+}
+function hideToast(){ $('toast').classList.remove('show'); }
+
+// ===== 渲染首页 =====
+function renderHome(){
+  // 主推第一集作为 hero
+  const first = ALL_EP[0];
+  const s0 = SERIES[0];
+  $('heroImg').src = s0.cover;
+  $('heroTitle').textContent = s0.title;
+  $('heroRating').textContent = (s0.rating||'').toFixed(1);
+  $('heroYear').textContent = s0.year || '';
+  $('heroEps').textContent = `共 ${s0.eps.length} 集`;
+  $('heroTag').textContent = s0.category || '剧集';
+
+  $('listTitle').textContent = SERIES.length>1 ? `全部剧集 · ${SERIES.length} 部` : '选集';
+
+  const grid = $('grid');
+  grid.innerHTML = '';
+  // 展示所有剧集（当前只有一部剧，展示分集）
+  ALL_EP.forEach((ep,idx)=>{
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.innerHTML = `
+      <div class="cover">
+        <img src="${ep.cover}" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect width=%22100%22 height=%22100%22 fill=%22%23222a3d%22/><text x=%2250%22 y=%2255%22 fill=%22%23888%22 font-size=%2214%22 text-anchor=%22middle%22>无封面</text></svg>'">
+        <span class="ep">第${ep.ep}集</span>
+      </div>
+      <div class="name">${ep.name}</div>`;
+    cell.addEventListener('click',()=>openPlayer(ep));
+    grid.appendChild(cell);
+  });
+}
+
+// ===== 播放器 =====
+let hls = null;
+let speed = 1;
+let hideTimer = null;
+
+function openPlayer(ep){
+  currentEp = ep;
+  currentSeries = SERIES.find(s=>s.eps.includes(ep));
+  $('player').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  $('vTitle').textContent = currentSeries.title;
+  $('vEp').textContent = `第 ${ep.ep} 集`;
+  renderEpPanel();
+  resetSpeed();
+  loadStream(ep.playUrl);
+  resetHideTimer();
+}
+
+function closePlayer(){
+  $('player').classList.remove('show');
+  document.body.style.overflow = '';
+  destroyHls();
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+  $('epPanel').classList.remove('show');
+  $('mask').classList.remove('show');
+  $('speedMenu').classList.remove('show');
+}
+
+function destroyHls(){
+  if(hls){ hls.destroy(); hls = null; }
+}
+
+function loadStream(url){
+  showToast('加载中...');
+  destroyHls();
+  video.pause();
+
+  if(window.Hls && Hls.isSupported()){
+    hls = new Hls({
+      maxBufferLength: 30,
+      maxMaxBufferLength: 60,
+      liveSyncDurationCount: 3,
+      enableWorker: true
+    });
+    hls.loadSource(url);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+      hideToast();
+      video.play().catch(()=>{});
+    });
+    hls.on(Hls.Events.ERROR,(e,data)=>{
+      if(data.fatal){
+        switch(data.type){
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            hls.startLoad();
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            hls.recoverMediaError();
+            break;
+          default:
+            destroyHls();
+            showToast('视频加载失败，请重试', true);
+            break;
+        }
+      }
+    });
+  } else if(video.canPlayType('application/vnd.apple.mpegurl')){
+    // iOS Safari 原生 HLS
+    video.src = url;
+    video.addEventListener('loadedmetadata',()=>{ hideToast(); video.play().catch(()=>{}); },{once:true});
+    video.addEventListener('error',()=>{ showToast('视频加载失败，请重试', true); },{once:true});
+  } else {
+    showToast('当前浏览器不支持播放此视频', true);
+  }
+}
+
+// ===== 选集面板 =====
+function renderEpPanel(){
+  $('epCnt').textContent = `共 ${currentSeries.eps.length} 集`;
+  const list = $('epList');
+  list.innerHTML = '';
+  currentSeries.eps.forEach(ep=>{
+    const it = document.createElement('div');
+    it.className = 'ep-item' + (ep.ep===currentEp.ep?' cur':'');
+    it.textContent = ep.ep;
+    it.addEventListener('click',()=>{
+      currentEp = ep;
+      $('vEp').textContent = `第 ${ep.ep} 集`;
+      renderEpPanel();
+      loadStream(ep.playUrl);
+      closeEpPanel();
+      resetHideTimer();
+    });
+    list.appendChild(it);
+  });
+}
+function openEpPanel(){
+  $('epPanel').classList.add('show');
+  $('mask').classList.add('show');
+}
+function closeEpPanel(){
+  $('epPanel').classList.remove('show');
+  $('mask').classList.remove('show');
+}
+
+// ===== 播放控制 =====
+function togglePlay(){
+  if(video.paused){ video.play().catch(()=>{}); }
+  else{ video.pause(); }
+}
+function seekBy(delta){
+  video.currentTime = Math.max(0, Math.min(video.duration||0, video.currentTime + delta));
+  flashGesture(delta>0?'快进 10s':'快退 10s');
+}
+function resetSpeed(){
+  speed = 1;
+  video.playbackRate = 1;
+  $('btnSpeed').textContent = '1.0x';
+  buildSpeedMenu();
+}
+function setSpeed(v){
+  speed = v;
+  video.playbackRate = v;
+  $('btnSpeed').textContent = v.toFixed(1).replace(/\.0$/,'')+'x';
+  buildSpeedMenu();
+  $('speedMenu').classList.remove('show');
+}
+function buildSpeedMenu(){
+  const rates=[0.5,0.75,1.0,1.25,1.5,2.0];
+  const m=$('speedMenu');
+  m.innerHTML='';
+  rates.forEach(r=>{
+    const o=document.createElement('div');
+    o.className='opt'+(r===speed?' active':'');
+    o.textContent=r.toFixed(2).replace(/\.?0+$/,'')+'x';
+    o.addEventListener('click',()=>setSpeed(r));
+    m.appendChild(o);
+  });
+}
+function toggleFullscreen(){
+  if(!document.fullscreenElement && !document.webkitFullscreenElement){
+    const el = $('player');
+    if(el.requestFullscreen) el.requestFullscreen();
+    else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } else {
+    if(document.exitFullscreen) document.exitFullscreen();
+    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+}
+
+// ===== 手势 =====
+let touchStartX=0, touchStartY=0, touchStartTime=0, touchStartLeft=0, touchMoved=false;
+vWrap.addEventListener('touchstart',e=>{
+  const t=e.touches[0];
+  touchStartX=t.clientX; touchStartY=t.clientY;
+  touchStartTime=Date.now(); touchMoved=false;
+  touchStartLeft = t.clientX < vWrap.clientWidth/2;
+},{passive:true});
+vWrap.addEventListener('touchend',e=>{
+  if(touchMoved) return;
+  const t=e.changedTouches[0];
+  const dx=t.clientX-touchStartX;
+  const dy=t.clientY-touchStartY;
+  const dt=Date.now()-touchStartTime;
+  if(dt>300) return;
+  if(Math.abs(dx)>60 && Math.abs(dy)<40){
+    // 双击区域快进快退
+  } else if(Math.abs(dx)<12 && Math.abs(dy)<12){
+    // 单击：显示/隐藏控制
+    toggleControls();
+  }
+},{passive:true});
+
+// 双击检测（快进/快退）
+let lastTap=0;
+vWrap.addEventListener('click',e=>{
+  const now=Date.now();
+  if(now-lastTap<300){
+    // 双击
+    const left = e.clientX < vWrap.clientWidth/2;
+    seekBy(left?-10:10);
+    lastTap=0;
+  } else {
+    lastTap=now;
+    setTimeout(()=>{ if(Date.now()-lastTap>=300) lastTap=0; },300);
+  }
+});
+
+// ===== 控制条显隐 =====
+function toggleControls(){
+  const bottom=$('vBottom'), top=$('vTop');
+  const hidden=!bottom.classList.contains('hidden');
+  bottom.classList.toggle('hidden',hidden);
+  top.classList.toggle('hide',hidden);
+  if(hidden){ $('centerBtn').classList.add('hide'); }
+  else{ syncCenterBtn(); resetHideTimer(); }
+}
+function resetHideTimer(){
+  clearTimeout(hideTimer);
+  hideTimer=setTimeout(()=>{
+    if(video.paused) return;
+    $('vBottom').classList.add('hidden');
+    $('vTop').classList.add('hide');
+    $('centerBtn').classList.add('hide');
+  },3000);
+}
+function syncCenterBtn(){
+  const c=$('centerBtn');
+  if(video.paused){
+    c.classList.remove('hide');
+    c.innerHTML='<svg class="play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+  } else {
+    c.classList.add('hide');
+  }
+}
+
+// ===== 进度条 =====
+const progress=$('progress');
+let dragging=false;
+function updateProgress(){
+  if(!video.duration) return;
+  const pct=(video.currentTime/video.duration)*100;
+  $('played').style.width=pct+'%';
+  $('thumb').style.left=pct+'%';
+  if(video.buffered.length){
+    const buf=video.buffered.end(video.buffered.length-1);
+    $('buffered').style.width=(buf/video.duration*100)+'%';
+  }
+  $('timeText').textContent=`${fmt(video.currentTime)} / ${fmt(video.duration)}`;
+}
+progress.addEventListener('click',e=>{
+  const rect=progress.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  if(video.duration) video.currentTime=pct*video.duration;
+});
+let dragOffset=0;
+progress.addEventListener('touchstart',e=>{
+  dragging=true;
+  const rect=progress.getBoundingClientRect();
+  dragOffset=e.touches[0].clientX-rect.left;
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(!dragging) return;
+  const rect=progress.getBoundingClientRect();
+  let x=e.touches[0].clientX-rect.left;
+  x=Math.max(0,Math.min(rect.width,x));
+  const pct=x/rect.width;
+  $('played').style.width=pct*100+'%';
+  $('thumb').style.left=pct*100+'%';
+  if(video.duration) $('timeText').textContent=`${fmt(pct*video.duration)} / ${fmt(video.duration)}`;
+},{passive:true});
+document.addEventListener('touchend',()=>{
+  if(!dragging) return;
+  dragging=false;
+  const pct=parseFloat($('played').style.width)/100;
+  if(video.duration) video.currentTime=pct*video.duration;
+});
+
+// ===== 事件绑定 =====
+video.addEventListener('timeupdate',updateProgress);
+video.addEventListener('progress',updateProgress);
+video.addEventListener('play',()=>{ syncCenterBtn(); });
+video.addEventListener('pause',()=>{ syncCenterBtn(); resetHideTimer(); });
+video.addEventListener('ended',()=>{
+  // 自动播下一集
+  const idx=ALL_EP.indexOf(currentEp);
+  if(idx>=0 && idx<ALL_EP.length-1){
+    const next=ALL_EP[idx+1];
+    currentEp=next;
+    currentSeries=SERIES.find(s=>s.eps.includes(next));
+    $('vEp').textContent=`第 ${next.ep} 集`;
+    renderEpPanel();
+    loadStream(next.playUrl);
+  }
+});
+video.addEventListener('error',()=>{
+  if(!window.Hls || !hls){ /* 原生 hls 错误已处理 */ }
+});
+
+$('heroPlay').addEventListener('click',()=>openPlayer(ALL_EP[0]));
+$('btnBack').addEventListener('click',closePlayer);
+$('btnEps').addEventListener('click',openEpPanel);
+$('mask').addEventListener('click',()=>{ closeEpPanel(); $('speedMenu').classList.remove('show'); });
+$('centerBtn').addEventListener('click',togglePlay);
+$('btnPlay').addEventListener('click',togglePlay);
+$('btnRewind').addEventListener('click',()=>seekBy(-10));
+$('btnForward').addEventListener('click',()=>seekBy(10));
+$('btnSpeed').addEventListener('click',()=>$('speedMenu').classList.toggle('show'));
+$('btnFs').addEventListener('click',toggleFullscreen);
+$('toastRetry').addEventListener('click',()=>{ if(currentEp) loadStream(currentEp.playUrl); });
+
+document.addEventListener('fullscreenchange',()=>{
+  // 全屏时保持竖屏视频居中
+});
+document.addEventListener('webkitfullscreenchange',()=>{});
+
+// 手势提示首次显示
+function flashGesture(text){
+  const g=$('gesture');
+  g.textContent=text;
+  g.classList.remove('hide');
+  clearTimeout(flashGesture._t);
+  flashGesture._t=setTimeout(()=>g.classList.add('hide'),900);
+}
+
+// 初始化
+buildSpeedMenu();
+renderHome();
+</script>
+</body>
+</html>
